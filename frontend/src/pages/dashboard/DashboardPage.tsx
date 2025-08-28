@@ -17,7 +17,9 @@ import {
   ShoppingBag,
   LogOut
 } from 'lucide-react';
+import { collection, getDocs } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
+import { db } from '../../services/firebase.service';
 
 interface DashboardStats {
   totalUsers: number;
@@ -29,18 +31,42 @@ interface DashboardStats {
 const DashboardPage: React.FC = () => {
   // 1. STATE MANAGEMENT
   const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 1247,
+    totalUsers: 0,
     totalOutlets: 89,
     totalRevenue: 125430,
     totalCustomers: 3421
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   
   // 2. HOOKS
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // 3. HANDLERS
+  // 3. EFFECTS
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  // 4. HANDLERS
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch users count from Firestore
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const userCount = usersSnapshot.size;
+      
+      setStats(prevStats => ({
+        ...prevStats,
+        totalUsers: userCount
+      }));
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await logout();
   };

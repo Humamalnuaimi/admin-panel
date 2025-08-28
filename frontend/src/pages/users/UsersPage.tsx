@@ -51,9 +51,30 @@ const UsersPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // For now, we'll create some demo data since we need Firebase Admin SDK for real user management
-      // In a real implementation, you'd fetch from Firebase Auth via your backend API
-      const demoUsers: User[] = [
+      // Fetch users from Firebase Firestore
+      const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(usersQuery);
+      
+      const fetchedUsers: User[] = [];
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        fetchedUsers.push({
+          uid: doc.id,
+          email: userData.email || '',
+          displayName: userData.displayName || userData.name || '',
+          createdAt: userData.createdAt?.toDate?.()?.toISOString() || userData.createdAt || new Date().toISOString(),
+          lastSignIn: userData.lastSignIn?.toDate?.()?.toISOString() || userData.lastSignIn || new Date().toISOString(),
+          disabled: userData.disabled || false,
+          emailVerified: userData.emailVerified !== undefined ? userData.emailVerified : true,
+          photoURL: userData.photoURL || undefined
+        });
+      });
+      
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      // Fallback to demo data if Firebase fetch fails
+      const fallbackUsers: User[] = [
         {
           uid: 'user1',
           email: 'alnuaimi.humam@gmail.com',
@@ -63,42 +84,9 @@ const UsersPage: React.FC = () => {
           disabled: false,
           emailVerified: true,
           photoURL: undefined
-        },
-        {
-          uid: 'user2',
-          email: 'john.doe@example.com',
-          displayName: 'John Doe',
-          createdAt: '2024-02-20T09:15:00Z',
-          lastSignIn: '2025-01-27T16:45:00Z',
-          disabled: false,
-          emailVerified: true,
-          photoURL: undefined
-        },
-        {
-          uid: 'user3',
-          email: 'jane.smith@example.com',
-          displayName: 'Jane Smith',
-          createdAt: '2024-03-10T11:20:00Z',
-          lastSignIn: '2025-01-26T08:30:00Z',
-          disabled: false,
-          emailVerified: false,
-          photoURL: undefined
-        },
-        {
-          uid: 'user4',
-          email: 'mike.wilson@example.com',
-          displayName: 'Mike Wilson',
-          createdAt: '2024-04-05T14:10:00Z',
-          lastSignIn: '2025-01-25T12:15:00Z',
-          disabled: true,
-          emailVerified: true,
-          photoURL: undefined
         }
       ];
-      
-      setUsers(demoUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+      setUsers(fallbackUsers);
     } finally {
       setLoading(false);
     }
