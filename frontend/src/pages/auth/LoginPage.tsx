@@ -5,6 +5,7 @@
 // LAST MODIFIED: January 28, 2025
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import GmailIcon from '../../components/ui/GmailIcon';
@@ -21,6 +22,7 @@ const LoginPage: React.FC = () => {
   
   // 2. HOOKS
   const { login, loginWithGoogle, loading } = useAuth();
+  const navigate = useNavigate();
 
   // 3. HANDLERS
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +33,8 @@ const LoginPage: React.FC = () => {
       const result = await login(email, password, loginType);
       if (result.success) {
         console.log('Login successful:', result.user, 'Type:', loginType);
-        // TODO: Redirect to appropriate dashboard
+        // Redirect to dashboard on successful login
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Login failed');
       }
@@ -47,7 +50,8 @@ const LoginPage: React.FC = () => {
       const result = await loginWithGoogle(loginType);
       if (result.success) {
         console.log('Google login successful:', result.user, 'Type:', loginType);
-        // TODO: Redirect to appropriate dashboard
+        // Redirect to dashboard on successful login
+        navigate('/dashboard');
       } else {
         setError(result.error || 'Google login failed');
       }
