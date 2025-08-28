@@ -5,6 +5,7 @@
 // LAST MODIFIED: January 28, 2025
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Store,
@@ -37,10 +38,15 @@ const DashboardPage: React.FC = () => {
   
   // 2. HOOKS
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   // 3. HANDLERS
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleNavigateToUsers = () => {
+    navigate('/users');
   };
 
   const formatCurrency = (amount: number) => {
@@ -184,25 +190,27 @@ const DashboardPage: React.FC = () => {
       marginBottom: '2rem'
     }}>
       {/* Users Card */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '20px',
-        padding: '2rem',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'all 0.3s ease',
-        cursor: 'pointer'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-5px)';
-        e.currentTarget.style.boxShadow = '0 10px 30px rgba(59, 130, 246, 0.2)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}>
+      <div 
+        onClick={handleNavigateToUsers}
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '20px',
+          padding: '2rem',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 10px 30px rgba(59, 130, 246, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}>
         <div style={{
           position: 'absolute',
           top: 0,
@@ -553,7 +561,9 @@ const DashboardPage: React.FC = () => {
           gap: '1.5rem'
         }}>
           {/* Manage Users */}
-          <button style={{
+          <button 
+            onClick={handleNavigateToUsers}
+            style={{
             width: '100%',
             padding: '1.5rem',
             background: 'rgba(255, 255, 255, 0.08)',
