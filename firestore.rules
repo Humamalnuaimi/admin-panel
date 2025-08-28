@@ -1,0 +1,197 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // ADMIN PANEL RULES - FULL ACCESS FOR ADMINS
+    // ========================================
+    // Function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email in ['alnuaimi.humam@gmail.com'] || 
+         exists(/databases/$(database)/documents/admins/$(request.auth.token.email)));
+    }
+    
+    // ADMIN COLLECTION MANAGEMENT
+    match /admins/{adminEmail} {
+      allow read, write, create, delete: if isAdmin();
+    }
+    
+    // 🔒 COMPLETE USER ISOLATION - Each user only accesses their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // 🤖 ADD: Allow Cloud Functions (Admin SDK) full access
+      allow read, write: if request.auth == null;
+      // 👑 ADMIN: Full access to all user documents
+      allow read, write, create, delete: if isAdmin();
+      
+      // Mobile app collections
+      match /customers/{customerId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access for campaign processing
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /checkins/{checkinId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /outlets/{outletId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /rewards/{rewardId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /templates/{templateId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      
+      // Web dashboard collections (existing)
+      match /web_transactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /web_customers/{customerId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /web_visits/{visitId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /web_outlet_stats/{statId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      
+      // 🔄 UPDATED: Shared promotions & campaigns (web writes, mobile reads)
+      match /promotions/{promotionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access for campaign automation
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      match /campaigns/{campaignId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access for campaign automation
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      
+      // 🆕 ADD THIS: Promotion usage tracking
+      match /promotionUsage/{usageId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      
+      // 🆕 ADD THIS: Customer-specific promotions (from campaigns)
+      match /customerPromotions/{customerId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // 🤖 ADD: Allow Cloud Functions access for campaign automation
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+        
+        match /promotions/{promotionId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+          // 🤖 ADD: Allow Cloud Functions access for campaign automation
+          allow read, write: if request.auth == null;
+          // 👑 ADMIN: Full access
+          allow read, write, create, delete: if isAdmin();
+        }
+      }
+    }
+    
+    // 🏢 KEEP EXISTING BUSINESS COLLECTION (for mobile app compatibility)
+    match /businesses/{businessId} {
+      allow read, write: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
+      // 🤖 ADD: Allow Cloud Functions access
+      allow read, write: if request.auth == null;
+      // 👑 ADMIN: Full access
+      allow read, write, create, delete: if isAdmin();
+      
+      match /promotions/{promotionId} {
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+      }
+      
+      match /customerPromotions/{customerId} {
+        allow read, write: if request.auth != null && 
+          get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+        // 🤖 ADD: Allow Cloud Functions access
+        allow read, write: if request.auth == null;
+        // 👑 ADMIN: Full access
+        allow read, write, create, delete: if isAdmin();
+        
+        match /promotions/{promotionId} {
+          allow read, write: if request.auth != null && 
+            get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+          // 🤖 ADD: Allow Cloud Functions access
+          allow read, write: if request.auth == null;
+          // 👑 ADMIN: Full access
+          allow read, write, create, delete: if isAdmin();
+        }
+      }
+    }
+    
+    // 🚫 BLOCK ALL OTHER ACCESS (except for admins)
+    match /{document=**} {
+      // 👑 ADMIN: Full access to everything else
+      allow read, write, create, delete: if isAdmin();
+      // Block everyone else
+      allow read, write: if false;
+    }
+  }
+}

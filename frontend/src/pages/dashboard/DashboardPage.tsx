@@ -17,9 +17,8 @@ import {
   ShoppingBag,
   LogOut
 } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../services/firebase.service';
+import AuthService from '../../services/firebase.service';
 
 interface DashboardStats {
   totalUsers: number;
@@ -52,9 +51,9 @@ const DashboardPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch users count from Firestore
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      const userCount = usersSnapshot.size;
+      // Fetch users count using AuthService
+      const userCount = await AuthService.getUserCount();
+      console.log(`📊 Dashboard: Found ${userCount} users in Firebase`);
       
       setStats(prevStats => ({
         ...prevStats,

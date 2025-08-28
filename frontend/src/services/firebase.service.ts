@@ -5,7 +5,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 
 // Firebase configuration for Rewin project
 const firebaseConfig = {
@@ -170,6 +170,79 @@ export class AuthService {
   // Check if user is authenticated
   static isAuthenticated() {
     return !!auth.currentUser;
+  }
+
+  // Get users from Firestore (for admin panel)
+  static async getUsers() {
+    try {
+      console.log('🔍 Fetching users from Firestore users collection...');
+      
+      // Try without orderBy first to avoid issues with missing fields
+      const usersCollection = collection(db, 'users');
+      const querySnapshot = await getDocs(usersCollection);
+      
+      console.log('📊 Total user documents found:', querySnapshot.size);
+      
+      const users: any[] = [];
+      
+      // Process each user and get their outlet count
+      for (const doc of querySnapshot.docs) {
+        const userData = doc.data();
+        console.log('👤 User document:', doc.id, userData);
+        
+        // Get outlet count for this user
+        let outletCount = 0;
+        try {
+          const outletsCollection = collection(db, 'users', doc.id, 'outlets');
+          const outletsSnapshot = await getDocs(outletsCollection);
+          outletCount = outletsSnapshot.size;
+          console.log(`🏪 User ${doc.id} has ${outletCount} outlets`);
+        } catch (error) {
+          console.log(`⚠️ Could not fetch outlets for user ${doc.id}:`, error);
+        }
+        
+        users.push({
+          uid: doc.id,
+          email: userData.email || '',
+          displayName: userData.displayName || userData.name || '',
+          createdAt: userData.createdAt?.toDate?.()?.toISOString() || userData.createdAt || new Date().toISOString(),
+          lastSignIn: userData.lastSignIn?.toDate?.()?.toISOString() || userData.lastSignIn || new Date().toISOString(),
+          disabled: userData.disabled || false,
+          emailVerified: userData.emailVerified !== undefined ? userData.emailVerified : true,
+          photoURL: userData.photoURL || undefined,
+          outletCount: outletCount
+        });
+      }
+      
+      console.log('✅ Processed users:', users.length, users);
+      
+      return {
+        success: true,
+        users,
+        total: users.length,
+        error: null
+      };
+    } catch (error: any) {
+      console.error('❌ Error fetching users:', error);
+      return {
+        success: false,
+        users: [],
+        total: 0,
+        error: error.message
+      };
+    }
+  }
+
+  // Get user count for dashboard
+  static async getUserCount() {
+    try {
+      const usersCollection = collection(db, 'users');
+      const querySnapshot = await getDocs(usersCollection);
+      return querySnapshot.size;
+    } catch (error) {
+      console.error('Error getting user count:', error);
+      return 0;
+    }
   }
 }
 

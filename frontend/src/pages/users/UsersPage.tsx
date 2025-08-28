@@ -15,11 +15,11 @@ import {
   CheckCircle,
   XCircle,
   ArrowLeft,
-  UserPlus
+  UserPlus,
+  ShoppingBag
 } from 'lucide-react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../../services/firebase.service';
-
+import AuthService from '../../services/firebase.service';
+// Temporarily define User interface locally to avoid import issues
 interface User {
   uid: string;
   email: string;
@@ -29,12 +29,14 @@ interface User {
   disabled: boolean;
   emailVerified: boolean;
   photoURL?: string;
+  outletCount: number;
 }
 
 const UsersPage: React.FC = () => {
   // 1. STATE MANAGEMENT
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   
@@ -51,29 +53,33 @@ const UsersPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch users from Firebase Firestore
-      const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(usersQuery);
+      // Fetch users using the AuthService
+      const result = await AuthService.getUsers();
       
-      const fetchedUsers: User[] = [];
-      querySnapshot.forEach((doc) => {
-        const userData = doc.data();
-        fetchedUsers.push({
-          uid: doc.id,
-          email: userData.email || '',
-          displayName: userData.displayName || userData.name || '',
-          createdAt: userData.createdAt?.toDate?.()?.toISOString() || userData.createdAt || new Date().toISOString(),
-          lastSignIn: userData.lastSignIn?.toDate?.()?.toISOString() || userData.lastSignIn || new Date().toISOString(),
-          disabled: userData.disabled || false,
-          emailVerified: userData.emailVerified !== undefined ? userData.emailVerified : true,
-          photoURL: userData.photoURL || undefined
-        });
-      });
-      
-      setUsers(fetchedUsers);
+      if (result.success) {
+        setUsers(result.users);
+        console.log(`✅ Successfully loaded ${result.users.length} users from Firebase`);
+      } else {
+        console.error('❌ Failed to fetch users:', result.error);
+        // Fallback to demo data if Firebase fetch fails
+        const fallbackUsers: User[] = [
+          {
+            uid: 'user1',
+            email: 'alnuaimi.humam@gmail.com',
+            displayName: 'Humam Al-Nuaimi',
+            createdAt: '2024-01-15T10:30:00Z',
+            lastSignIn: '2025-01-28T14:22:00Z',
+            disabled: false,
+            emailVerified: true,
+            photoURL: undefined,
+            outletCount: 0
+          }
+        ];
+        setUsers(fallbackUsers);
+      }
     } catch (error) {
-      console.error('Error fetching users:', error);
-      // Fallback to demo data if Firebase fetch fails
+      console.error('❌ Unexpected error fetching users:', error);
+      // Fallback to demo data
       const fallbackUsers: User[] = [
         {
           uid: 'user1',
@@ -83,7 +89,8 @@ const UsersPage: React.FC = () => {
           lastSignIn: '2025-01-28T14:22:00Z',
           disabled: false,
           emailVerified: true,
-          photoURL: undefined
+          photoURL: undefined,
+          outletCount: 0
         }
       ];
       setUsers(fallbackUsers);
@@ -95,6 +102,33 @@ const UsersPage: React.FC = () => {
   const handleViewUser = (user: User) => {
     // For now, just log the action
     console.log('View user:', user.email);
+  };
+
+  // const handleAddUser = async (userData: AddUserData) => {
+  //   try {
+  //     console.log('🆕 Adding new user:', userData);
+  //     
+  //     // TODO: Implement user creation logic
+  //     // This will create the user in Firebase Auth and send invitation
+  //     
+  //     // For now, just log the action
+  //     console.log(`📧 Sending ${userData.invitationType} invitation to ${userData.email}`);
+  //     
+  //     // Refresh users list after adding
+  //     await fetchUsers();
+  //     
+  //     // Show success message (you can add a toast notification here)
+  //     console.log('✅ User invitation sent successfully!');
+  //     
+  //   } catch (error) {
+  //     console.error('❌ Error adding user:', error);
+  //     throw error; // Re-throw to show error in modal
+  //   }
+  // };
+
+  const handleAddUserClick = () => {
+    console.log('Add User clicked - functionality will be implemented with Firebase');
+    // setShowAddUserModal(true);
   };
 
   const handleBackToDashboard = () => {
@@ -205,7 +239,9 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
         
-        <button style={{
+        <button 
+          onClick={handleAddUserClick}
+          style={{
           padding: '0.75rem 1.5rem',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           border: 'none',
@@ -417,7 +453,7 @@ const UsersPage: React.FC = () => {
                     fontSize: '0.875rem',
                     fontWeight: '600',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>Created</th>
+                  }}>Total Outlets</th>
                   <th style={{
                     padding: '1rem',
                     textAlign: 'left',
@@ -538,9 +574,9 @@ const UsersPage: React.FC = () => {
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}>
-                        <Calendar size={14} style={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                        <ShoppingBag size={14} style={{ color: 'rgba(255, 255, 255, 0.5)' }} />
                         <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.875rem' }}>
-                          {formatDate(user.createdAt)}
+                          {user.outletCount} {user.outletCount === 1 ? 'outlet' : 'outlets'}
                         </span>
                       </div>
                     </td>
@@ -641,6 +677,13 @@ const UsersPage: React.FC = () => {
       {renderHeader()}
       {renderSearchAndFilter()}
       {renderUsersTable()}
+      
+      {/* Add User Modal - Temporarily disabled */}
+      {/* <AddUserModal
+        isOpen={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onAddUser={handleAddUser}
+      /> */}
     </div>
   );
 };
