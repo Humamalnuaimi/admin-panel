@@ -7,7 +7,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 
-// Firebase configuration for Rewin project
+// Firebase configuration for Rewin project - MUST match the original dashboard config
 const firebaseConfig = {
   apiKey: "AIzaSyCF366Uvs28FeRzhEH84Zvm6jVoX1QcnOU",
   authDomain: "rewin-f4ca1.firebaseapp.com",
@@ -15,8 +15,8 @@ const firebaseConfig = {
   projectId: "rewin-f4ca1",
   storageBucket: "rewin-f4ca1.firebasestorage.app",
   messagingSenderId: "355525518295",
-  appId: "1:355525518295:web:15b8d098eea4981a48a192",
-  measurementId: "G-VDVG2TWFBZ"
+  appId: "1:355525518295:web:bdf73a20fb97186148a192", // Same as original dashboard
+  measurementId: "G-H1WK02H8SN" // Same as original dashboard
 };
 
 // Initialize Firebase
@@ -74,22 +74,27 @@ export class AuthService {
   static async signInWithEmail(email: string, password: string, loginType: 'admin' | 'user' = 'admin') {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      const isAdmin = await this.isUserAdmin(result.user);
       
-      // If trying to access admin panel, check admin privileges
-      if (loginType === 'admin' && !isAdmin) {
-        await signOut(auth);
-        return {
-          success: false,
-          user: null,
-          error: 'Access denied. Admin privileges required.'
-        };
-      }
-
-      // Create/update admin record if user is admin
-      if (isAdmin) {
+      // Only check admin status if trying to access admin panel
+      let isAdmin = false;
+      if (loginType === 'admin') {
+        isAdmin = await this.isUserAdmin(result.user);
+        
+        // If trying to access admin panel but not admin, deny access
+        if (!isAdmin) {
+          await signOut(auth);
+          return {
+            success: false,
+            user: null,
+            error: 'Access denied. Admin privileges required.'
+          };
+        }
+        
+        // Create/update admin record for admin users
         await this.createAdminRecord(result.user);
       }
+
+      // For user login, allow any authenticated user (no admin check needed)
 
       return {
         success: true,
@@ -112,22 +117,27 @@ export class AuthService {
   static async signInWithGoogle(loginType: 'admin' | 'user' = 'admin') {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const isAdmin = await this.isUserAdmin(result.user);
       
-      // If trying to access admin panel, check admin privileges
-      if (loginType === 'admin' && !isAdmin) {
-        await signOut(auth);
-        return {
-          success: false,
-          user: null,
-          error: 'Access denied. Admin privileges required.'
-        };
-      }
-
-      // Create/update admin record if user is admin
-      if (isAdmin) {
+      // Only check admin status if trying to access admin panel
+      let isAdmin = false;
+      if (loginType === 'admin') {
+        isAdmin = await this.isUserAdmin(result.user);
+        
+        // If trying to access admin panel but not admin, deny access
+        if (!isAdmin) {
+          await signOut(auth);
+          return {
+            success: false,
+            user: null,
+            error: 'Access denied. Admin privileges required.'
+          };
+        }
+        
+        // Create/update admin record for admin users
         await this.createAdminRecord(result.user);
       }
+
+      // For user login, allow any authenticated user (no admin check needed)
 
       return {
         success: true,

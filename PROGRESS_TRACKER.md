@@ -4,7 +4,7 @@
 
 ## Current Session: January 28, 2025
 ### Developer: AI Assistant
-### Working On: Project Foundation & Rule Creation
+### Working On: Unified Login System & User Dashboard Integration
 ### Session Status: In Progress
 
 ### Today's Goals:
@@ -25,6 +25,48 @@
 - [x] Implement admin authorization system with email-based access control
 - [x] Create authentication context and hooks for user state management
 - [x] Add error handling and loading states to login page
+- [x] Create users management page with Firebase integration
+- [x] Replace "Created" column with "Total Outlets" showing outlet count per user
+- [x] Add functional Add User modal with email/Gmail invitation options
+- [x] Create professional email templates (user invitation, Gmail invitation, password reset)
+- [x] Add Firebase security rules for complete admin access
+- [x] Fix import issues and component structure
+- [x] Add user types and interfaces
+- [x] Create comprehensive email template documentation
+- [x] Push to GitHub branch Testadmin-2
+- [x] Implement unified login system with dual dashboard redirection
+- [x] Add user login redirect to main Rewin dashboard (localhost:5174)
+- [x] Maintain admin login redirect to admin dashboard (/dashboard)
+- [x] Fix Firebase authentication to allow non-admin users for user login
+- [x] Fix routing conflict in App.tsx preventing user dashboard redirect
+- [x] Remove automatic redirect that was overriding custom login redirect logic
+- [x] Fix Firebase permissions error - only check admin status for admin login type
+- [x] Prevent unnecessary Firestore admin collection access for user logins
+- [x] Fix AuthProvider automatic admin check causing console errors
+- [x] Change default login type from admin to user for better user experience
+- [x] Update login functions to properly set admin status in context
+- [x] Clean up incorrectly copied user dashboard files
+- [x] Fix user login redirect with proper error handling for separate server
+- [x] Add console logging for debugging redirect issues
+- [x] Analyze original Rewin dashboard authentication method
+- [x] Implement direct Firebase auth for user login (bypassing custom service)
+- [x] Use simple signInWithEmailAndPassword for user login like original dashboard
+- [x] Debug authentication flow - confirmed auth works but redirect loops back
+- [x] Add localStorage auth state storage for cross-application authentication
+- [x] Implement Firebase ID token passing via URL parameters
+- [x] Add multiple fallback redirect approaches for better compatibility
+- [x] Identify Firebase config mismatch between admin panel and user dashboard
+- [x] Update Firebase config to match original dashboard (same appId and measurementId)
+- [x] Remove dynamic imports to fix CSP (Content Security Policy) violations
+- [x] Simplify redirect logic to rely on shared Firebase authentication state
+- [x] Identify root cause: User dashboard has its own login page causing double login
+- [x] Remove user dashboard login page and redirect to unified admin panel login
+- [x] Configure proper CSP headers for Firebase Auth and Google OAuth
+- [x] Start both servers: Admin Panel (5173) and User Dashboard (5174)
+- [x] **COMPLETE REBUILD**: Remove all old authentication logic from user dashboard
+- [x] Simplify user dashboard to only check Firebase auth state (no login handlers)
+- [x] User dashboard now redirects to admin panel if no authenticated user found
+- [x] Logout from user dashboard redirects back to admin panel login
 
 ### Files Created/Modified:
 - [x] DEVELOPMENT_RULES.md - Complete rule system with integrated AI compliance + tech stack rules
@@ -40,9 +82,26 @@
 - [x] backend/tsconfig.json - TypeScript configuration
 - [x] frontend/src/components/ui/GmailIcon.tsx - Custom Gmail SVG icon component
 - [x] frontend/src/assets/icons/gmail.svg - Official Gmail SVG icon
+- [x] frontend/src/services/firebase.service.ts - Updated authentication logic for user/admin login types
+- [x] frontend/src/App.tsx - Fixed routing conflict preventing user dashboard redirect
+- [x] frontend/src/pages/auth/LoginPage.tsx - Enhanced with dual redirect logic based on login type
 
 ### Issues Encountered:
-- None so far - foundation phase going smoothly
+- **User Login Redirect Issue**: User login was incorrectly taking users to admin dashboard instead of user dashboard
+  - **Root Cause**: App.tsx routing was automatically redirecting all authenticated users to `/dashboard`
+  - **Solution**: Removed automatic redirect from login route to allow LoginPage to handle custom redirects
+- **Authentication Logic Issue**: Firebase service was blocking non-admin users even for user login
+  - **Root Cause**: Admin privilege check was applied to both admin and user login types
+  - **Solution**: Modified authentication logic to only check admin privileges for admin login type
+- **Firebase Permissions Error**: User login was failing with "Missing or insufficient permissions" 
+  - **Root Cause**: System was always calling `isUserAdmin()` which requires Firestore admin collection access
+  - **Solution**: Only check admin status when `loginType === 'admin'`, skip admin check for user login
+- **AuthProvider Console Errors**: Admin permission errors showing in console even for successful logins
+  - **Root Cause**: AuthProvider was automatically calling `isUserAdmin()` on every auth state change
+  - **Solution**: Removed automatic admin check from AuthProvider, let login functions handle admin status
+- **Default Login Type**: Page was defaulting to admin login instead of user login
+  - **Root Cause**: LoginPage state initialized with `loginType: 'admin'`
+  - **Solution**: Changed default to `loginType: 'user'` for better user experience
 
 ### Next Session Priorities:
 1. Set up Vite + React + TypeScript project structure

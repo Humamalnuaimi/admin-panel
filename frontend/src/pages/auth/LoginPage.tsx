@@ -7,14 +7,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../services/firebase.service';
 import GmailIcon from '../../components/ui/GmailIcon';
 
 type LoginType = 'admin' | 'user';
 
 const LoginPage: React.FC = () => {
   // 1. STATE MANAGEMENT
-  const [loginType, setLoginType] = useState<LoginType>('admin');
+  const [loginType, setLoginType] = useState<LoginType>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,13 +32,46 @@ const LoginPage: React.FC = () => {
     setError(null);
     
     try {
-      const result = await login(email, password, loginType);
-      if (result.success) {
-        console.log('Login successful:', result.user, 'Type:', loginType);
-        // Redirect to dashboard on successful login
-        navigate('/dashboard');
+      console.log('🔐 Starting login process. Type:', loginType, 'Email:', email);
+      
+      if (loginType === 'user') {
+        // For user login, use simple Firebase auth like the original Rewin dashboard
+        console.log('🔐 User login - using simple Firebase authentication');
+        console.log('🔥 Firebase auth object:', auth);
+        console.log('🔥 signInWithEmailAndPassword function:', signInWithEmailAndPassword);
+        
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('✅ User authentication successful:', userCredential.user.email);
+        
+        // Redirect to main Rewin user dashboard
+        console.log('🚀 Redirecting to Rewin dashboard at http://localhost:5174');
+        
+        // Since both applications use the same Firebase project, 
+        // the authentication state should persist automatically
+        console.log('✅ Authentication successful, redirecting to user dashboard...');
+        console.log('🔑 User details:', {
+          email: userCredential.user.email,
+          uid: userCredential.user.uid,
+          emailVerified: userCredential.user.emailVerified
+        });
+        
+        // Immediate redirect - Firebase auth state should persist
+        console.log('🔄 Redirecting to user dashboard...');
+        console.log('🔥 Current Firebase auth state:', auth.currentUser?.email);
+        window.location.href = 'http://localhost:5174';
       } else {
-        setError(result.error || 'Login failed');
+        // For admin login, use our custom authentication service
+        console.log('🔐 Admin login - using custom authentication service');
+        const result = await login(email, password, loginType);
+        console.log('🔍 Admin login result:', result);
+        
+        if (result.success) {
+          console.log('✅ Admin authentication successful:', result.user);
+          navigate('/dashboard');
+        } else {
+          console.error('❌ Admin login failed:', result.error);
+          setError(result.error || 'Admin login failed');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
@@ -47,13 +82,29 @@ const LoginPage: React.FC = () => {
     setError(null);
     
     try {
-      const result = await loginWithGoogle(loginType);
-      if (result.success) {
-        console.log('Google login successful:', result.user, 'Type:', loginType);
-        // Redirect to dashboard on successful login
-        navigate('/dashboard');
+      if (loginType === 'user') {
+        // For user login, use simple Firebase Google auth like the original Rewin dashboard
+        console.log('🔐 User Google login - using simple Firebase authentication');
+        
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        console.log('✅ User Google authentication successful:', result.user.email);
+        
+        // Redirect to main Rewin user dashboard
+        console.log('🚀 Redirecting to Rewin dashboard at http://localhost:5174');
+        setTimeout(() => {
+          window.location.href = 'http://localhost:5174';
+        }, 500);
       } else {
-        setError(result.error || 'Google login failed');
+        // For admin login, use our custom authentication service
+        console.log('🔐 Admin Google login - using custom authentication service');
+        const result = await loginWithGoogle(loginType);
+        if (result.success) {
+          console.log('✅ Admin Google authentication successful:', result.user);
+          navigate('/dashboard');
+        } else {
+          setError(result.error || 'Admin Google login failed');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');

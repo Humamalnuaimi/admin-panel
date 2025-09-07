@@ -39,13 +39,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       
-      if (user) {
-        // Check if user is admin
-        const adminStatus = await AuthService.isUserAdmin(user);
-        setIsAdmin(adminStatus);
-        
-        // Note: We no longer auto-logout non-admins since they can access user panel
-      } else {
+      // Don't automatically check admin status - let login functions handle this
+      // This prevents unnecessary Firestore calls and permission errors
+      if (!user) {
         setIsAdmin(false);
       }
       
@@ -59,6 +55,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const result = await AuthService.signInWithEmail(email, password, loginType);
+      if (result.success) {
+        setIsAdmin(result.isAdmin || false);
+      }
       return result;
     } finally {
       setLoading(false);
@@ -69,6 +68,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const result = await AuthService.signInWithGoogle(loginType);
+      if (result.success) {
+        setIsAdmin(result.isAdmin || false);
+      }
       return result;
     } finally {
       setLoading(false);
